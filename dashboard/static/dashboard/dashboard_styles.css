@@ -1,0 +1,113 @@
+/* Estilo para o dashboard dos cards  */
+.dashboard-cards {
+  display: flex;
+}
+
+/* Estilos para o card */
+.card-board {
+  width: 300px;
+  border: 1px solid #ccc;
+  border-radius: 8px;
+  padding: 1rem;
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+  margin: 1rem;
+  background: var(--primary-color);
+  color: var(--tertiary-color);
+  display: flex;
+  flex-direction: column;
+}
+
+h4 {
+  margin: 0;
+}
+/* Estilos para a foto de perfil */
+
+/* Estilos para as métricas */
+.metrics {
+  display: flex;
+  justify-content: space-between;
+  margin-top: 1rem;
+}
+
+.following,
+.unfollowing {
+  text-align: center;
+}
+
+.following span,
+.unfollowing span {
+  display: block;
+  font-weight: bold;
+  color: #9d9d9d;
+}
+
+.following span:last-child,
+.unfollowing span:last-child {
+  font-size: 24px;
+  color: #c3c3c3;
+}
+
+#main-container {
+  background-color: var(--secondary-color);
+  margin: 2rem 1rem 1rem 1rem;
+  padding: 1rem;
+  border-radius: 1rem;
+}
+
+/* notifications app  */
+
+
+
+
+#notification-container {
+  position: fixed;
+  bottom: 30px;
+  left: 30px;
+  width: 300px;
+  border: 2px solid var(--tertiary-color);
+  border-radius: 8px;
+  
+  overflow: hidden;
+  transition: height 0.3s ease;
+  
+}
+
+
+
+#notification-header {
+  background-color: var(--secondary-color);
+  padding: 10px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  cursor: pointer;
+}
+
+
+
+#notification-body {
+  display: none;
+  background-color: var(--primary-color);
+  padding: 1rem;
+  
+}
+
+#notification-body > div { 
+  color: var(--tertiary-color);
+
+}
+
+#notification-container.opened >  #notification-body {
+  display: block;
+  height: 400px;
+  display: flex;
+  flex-direction: column-reverse; 
+  overflow-y: scroll; 
+  scrollbar-width: none; 
+  -ms-overflow-style: none;
+}
+
+#notification-body::-webkit-scrollbar {
+  display: none;
+
+}

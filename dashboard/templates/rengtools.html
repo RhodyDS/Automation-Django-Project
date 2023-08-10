@@ -1,0 +1,235 @@
+{% load static %}
+<link rel="stylesheet" href="{% static 'dashboard/rengtools_styles.css' %}" />
+
+{% comment %} ----- page contents ----- {% endcomment %}
+<div class="container">
+  <input type="checkbox" id="toggle" checked />
+  <label class="button" for="toggle"></label>
+  <nav class="nav">
+    <ul>
+      <a href="#" id="followButton">follow</a>
+      <a href="#" id="unfollowButton">unfollow</a>
+      <a href="#" id="storiesButton">stories engaging</a>
+      <a href="#" id="commentsButton">comment engaging</a>
+    </ul>
+  </nav>
+</div>
+
+{% comment %} ----- modal page ----- {% endcomment %}
+<div class="modal" id="followModal" tabindex="-1">
+  <div class="modal-dialog">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title">Seguir Cliente</h5>
+        <button
+          type="button"
+          class="btn-close"
+          data-bs-dismiss="modal"
+          aria-label="Close"
+        ></button>
+      </div>
+      <div class="modal-body">
+        <form id="followForm">
+          {% csrf_token %}
+          <div>
+            <label for="dispositivo">Dispositivo:</label>
+            <select name="dispositivo" id="dispositivo">
+              <option value="1">Padrão</option>
+              <option value="2">Outro</option>
+            </select>
+          </div>
+          <div>
+            <label for="group">Group:</label>
+            <div class="rengtools-checkbox-group">
+              {% for cliente in clients %}
+              <input
+                type="checkbox"
+                name="group"
+                value="{{ cliente }}"
+                id="{{ cliente }}Checkbox"
+              />
+              <label for="{{ cliente }}Checkbox">{{ cliente }}</label>
+              {% endfor %}
+            </div>
+          </div>
+          <div class="pacote-label">
+            <label for="pacote">pacote</label>
+            <div class="rengtools-checkbox-pacote">
+              {% for pack in packs %}
+              <div>
+                <input
+                  type="checkbox"
+                  name="pacote"
+                  value="{{ pack }}"
+                  id="{{ pack }}Checkbox"
+                />
+                <label for="{{ pack }}Checkbox">{{ pack }}</label>
+              </div>
+              {% endfor %}
+            </div>
+          </div>
+          <div class="rodadas-label">
+            <label for="rodadas">Rodadas:</label>
+            <input
+              type="number"
+              name="rodadas"
+              id="rodadas"
+              min="1"
+              step="1"
+              inputmode="numeric"
+              required
+            />
+          </div>
+          <div class="tempo-label">
+            <label for="tempo">Tempo de pausa entre as operações:</label>
+            <input
+              type="number"
+              name="tempo"
+              id="tempo"
+              min="0"
+              step="1"
+              inputmode="numeric"
+              required
+            />
+          </div>
+
+          <div>
+            <label for="quantseguir">Quantseguir:</label>
+            <input
+              type="number"
+              name="quantseguir"
+              id="quantseguir"
+              min="1"
+              step="1"
+              inputmode="numeric"
+              required
+            />
+          </div>
+
+          <div>
+            <label for="func">Func:</label>
+            <select name="func" id="func">
+              <option value="fol">follow</option>
+              <option value="unf">unfollow</option>
+              <option value="str">stories</option>
+              <option value="comment">comment</option>
+            </select>
+          </div>
+          <div class="continua-label">
+            <label for="cont">Cont:</label>
+            <select name="cont" id="cont">
+              <option value="n">n</option>
+              <option value="s">s</option>
+            </select>
+          </div>
+        </form>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
+          Cancelar
+        </button>
+        <button type="button" class="btn btn-primary" id="confirmFollow">
+          Confirmar
+        </button>
+      </div>
+    </div>
+  </div>
+</div>
+
+{% comment %} ----- JavaScript----- {% endcomment %} {% load static %}
+<script>
+  document.addEventListener("DOMContentLoaded", function () {
+    // buttons varriables
+    const followButton = document.getElementById("followButton");
+    const storiesButton = document.getElementById("storiesButton");
+    const unfollowButton = document.getElementById("unfollowButton");
+    const commentsButton = document.getElementById("commentsButton");
+    // model fields
+    const pacoteLabel = document.querySelector(".pacote-label");
+    const rodadasLabel = document.querySelector(".rodadas-label");
+    const continuaLabel = document.querySelector(".continua-label");
+    const tempoLabel = document.querySelector(".tempo-label");
+
+    const followModal = new bootstrap.Modal(
+      document.getElementById("followModal")
+    );
+
+    // defining the fields
+    followButton.addEventListener("click", function () {
+      pacoteLabel.style.display = "block";
+      continuaLabel.style.display = "block";
+      tempoLabel.style.display = "block";
+      followModal.show();
+    });
+
+    unfollowButton.addEventListener("click", function () {
+      pacoteLabel.style.display = "none";
+      continuaLabel.style.display = "block";
+      tempoLabel.style.display = "block";
+      followModal.show();
+    });
+
+    storiesButton.addEventListener("click", function () {
+      pacoteLabel.style.display = "none";
+      continuaLabel.style.display = "none";
+      tempoLabel.style.display = "none";
+      followModal.show();
+    });
+
+    commentsButton.addEventListener("click", function () {
+      pacoteLabel.style.display = "none";
+      continuaLabel.style.display = "block";
+      tempoLabel.style.display = "none";
+      followModal.show();
+    });
+
+    // confirm button and AJAX
+    const confirmFollowButton = document.getElementById("confirmFollow");
+    confirmFollowButton.addEventListener("click", function () {
+      const formData = new FormData(document.getElementById("followForm"));
+      const dispositivo = formData.get("dispositivo");
+      const group = formData.getAll("group");
+      const pacote = formData.getAll("pacote");
+      const rodadas = formData.get("rodadas") || 1;
+      const tempo = formData.get("tempo") || 0;
+      const quantseguir = formData.get("quantseguir") || 0;
+      const func = formData.get("func");
+      const cont = formData.get("cont");
+
+      const data = {
+        dispositivo,
+        group,
+        pacote,
+        rodadas,
+        tempo,
+        quantseguir,
+        func,
+        cont,
+      };
+
+      fetch("{% url 'automacao' %}", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          "X-CSRFToken": "{{ csrf_token }}",
+        },
+        body: JSON.stringify(data),
+      })
+        .then((response) => response.json())
+        .then((data) => {
+          if (data.success) {
+            alert("Automação concluída com sucesso!");
+            followModal.hide();
+          } else {
+            alert("Erro ao processar a automação.");
+          }
+        })
+        .catch((error) => {
+          alert("Ocorreu um erro ao enviar os dados.");
+          console.error(error);
+        });
+
+      followModal.hide();
+    });
+  });
+</script>
