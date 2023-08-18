@@ -15,11 +15,11 @@ from selenium.webdriver.support import expected_conditions as EC
 from rich import print
 from asgiref.sync import async_to_sync
 from channels.layers import get_channel_layer
-import json
-from bson.objectid import ObjectId
 
+from celery import shared_task
+channel_layer = get_channel_layer()
 
-# "specific..inmemory!oSRZtvoFiero"
+@shared_task
 def unfandfol(
     dispositivo, fila, pacote, rodadas, timebreak, quantseguir, func="fol", cont="n"
 ):
@@ -28,17 +28,16 @@ def unfandfol(
     db = client["Rengage"]
     dbcliente = db["clientes"]
     dbwork_diario = db["workday"]
-    collection = db["channel"]
+
 
     data = datetime.date.today()
-    channel_layer = get_channel_layer()
+
     # appium data
     caps = {"platformName": "android", "automationName": "UiAutomator2"}
 
     if dispositivo == "1":
         # caps["deviceName"] = "fb8a4f98"  # v
         # caps["udid"] = "127.0.0.1:5655"
-
         driver = Remote("http://localhost:4723/wd/hub", caps)
     elif dispositivo == "2":
         caps = {}
@@ -53,17 +52,23 @@ def unfandfol(
     if dbwork_diario.find_one({"data": str(data)}):
         print("trabalho diario já iniciado.")
 
-        channel_layer = get_channel_layer()
+        
         async_to_sync(channel_layer.group_send)(
             "notifications",
             {"type": "send_notification", "message": "trabalho diario já iniciado."},
         )
 
-
     else:
         dbwork_diario.insert_one({"data": str(data), "clientes": {}})
         print("primeira vez no dia")
         print(dbwork_diario.find_one({"data": str(data)}, {"_id": 0}))
+        async_to_sync(channel_layer.group_send)(
+            "notifications",
+            {
+                "type": "send_notification",
+                "message": f"primeira vez no dia. {dbwork_diario.find_one({'data': str(data)}, {'_id': 0})}",
+            },
+        )
 
     inicio = time.time()
     wait = WebDriverWait(driver, 2)
@@ -76,12 +81,9 @@ def unfandfol(
         dbwork_diario.update_one({"data": str(data)}, {"$set": {dispositivo: save}})
     for j in range(save["rodada"], rodadas):
         print(f"[on orange]{j + 1}° rodada[/]")
-        event = {"notification": "Sua mensagem de notificação aqui"}
-        notification = "trabalho diario já iniciado0000."
-        channel_layer = get_channel_layer()
         async_to_sync(channel_layer.group_send)(
-            "test_consumer_group",
-            {"type": "send_notification", "value": json.dumps(event)},
+            "notifications",
+            {"type": "send_notification", "message": f" {j + 1}° rodada "},
         )
 
         for i in range(save["vez"], quant):
@@ -96,15 +98,9 @@ def unfandfol(
                     print(
                         dbwork_diario.find_one({"data": str(data)})["clientes"][fila[i]]
                     )
-                    notification = dbwork_diario.find_one({"data": str(data)})[
-                        "clientes"
-                    ][fila[i]]
                     async_to_sync(channel_layer.group_send)(
-                        "dashboard_notification",
-                        {
-                            "type": "send_notification",
-                            "notification": notification,
-                        },
+                        "notifications",
+                        {"type": "send_notification", "message": f" {dbwork_diario.find_one({'data': str(data)})['clientes'][fila[i]]}"},
                     )
             except:
                 day = {"unf": 0, "fol": 0}
@@ -112,7 +108,10 @@ def unfandfol(
                     {"data": str(data)}, {"$set": {"clientes." + fila[i] + "": day}}
                 )
                 print(dbwork_diario.find_one({"data": str(data)})["clientes"][fila[i]])
-
+                async_to_sync(channel_layer.group_send)(
+                        "notifications",
+                        {"type": "send_notification", "message": f" {dbwork_diario.find_one({'data': str(data)})['clientes'][fila[i]]}"},
+                    )
             ############ primeira etapa , entrando na conta ################################
             if i == 0:
                 try:
@@ -121,6 +120,10 @@ def unfandfol(
                     )
                 except:
                     print("conta já logada")
+                    async_to_sync(channel_layer.group_send)(
+                        "notifications",
+                        {"type": "send_notification", "message": "conta já logada"},
+                    )
             ############ segunda etapa, definindo caminho da automação #####################
             if func == "fol":
                 seguir(
@@ -137,13 +140,16 @@ def unfandfol(
                     fila[i], quantseguir / rodadas, driver, j + 1, i + 1, dispositivo
                 )
             elif func == "str":
-                watchingStories(driver, quantseguir)
+                watchingStories(driver, quantseguir / rodadas)
 
             elif func == "comment":
-                commentEngaging(driver, quantseguir, fila[i], cont)
+                commentEngaging(driver, quantseguir / rodadas, fila[i], cont)
             fim = time.time()
             print(f"o tempo de execução foi de: {(fim - inicio) / 60}")
-
+            async_to_sync(channel_layer.group_send)(
+                        "notifications",
+                        {"type": "send_notification", "message": f"o tempo de execução foi de: {(fim - inicio) / 60}"},
+                    )
             a = i + 1
             dbwork_diario.update_one(
                 {"data": str(data)}, {"$set": {dispositivo + ".qAtual": 0}}
@@ -161,6 +167,10 @@ def unfandfol(
                 sair(driver)
             except:
                 print("erro ao sair")
+                async_to_sync(channel_layer.group_send)(
+                        "notifications",
+                        {"type": "send_notification", "message": "erro ao sair"},
+                    )
             sleep(1)
             driver.back()
 
@@ -177,7 +187,7 @@ def unfandfol(
             actions = TouchAction(driver)
             actions.press(insta)
             actions.perform()
-
+            sleep(1)
             driver.find_element(
                 by=MobileBy.ACCESSIBILITY_ID, value="Informações do app"
             ).click()
@@ -209,6 +219,10 @@ def unfandfol(
 
             except:
                 print("n foi possivel logar,tentando de novo")
+                async_to_sync(channel_layer.group_send)(
+                        "notifications",
+                        {"type": "send_notification", "message": "n foi possivel logar,tentando de novo"},
+                    )
                 try:
                     entrar(
                         fila[a], dbcliente.find_one({"user": fila[a]})["senha"], driver
@@ -216,7 +230,15 @@ def unfandfol(
 
                 except:
                     print("n foi possivel logar")
+                    async_to_sync(channel_layer.group_send)(
+                        "notifications",
+                        {"type": "send_notification", "message": "n foi possivel logar"},
+                    )
 
         sleep(timebreak)
     fim = time.time()
     print(f"o tempo de execução foi de: {(fim - inicio) / 60}")
+    async_to_sync(channel_layer.group_send)(
+        "notifications",
+        {"type": "send_notification", "message": f"o tempo de execução foi de: {(fim - inicio) / 60}"},
+    )

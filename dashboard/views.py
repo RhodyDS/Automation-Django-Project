@@ -18,13 +18,7 @@ def home_Dashboard(request):
     collection = db["workday"]
     clientes = db["clientes"]
     packs = db["packfollowers"]
-    print('here')
-    # event = {"notification": "Sua mensagem de notificação aquicvdc"}
-    channel_layer = get_channel_layer()
-    async_to_sync(channel_layer.group_send)(
-        "notifications",
-        {"type": "send_notification", "message": "testando"},
-    )
+
 
     all_packs = packs.distinct("user")
     all_clients = clientes.distinct("user")
@@ -74,7 +68,7 @@ def automacao_view(request):
         func = data.get("func")
         continuar = data.get("cont")
 
-        unfandfol(
+        unfandfol.delay(
             dispositivo, group, pacote, rodadas, timebreak, quantseguir, func, continuar
         )
 

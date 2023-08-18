@@ -81,13 +81,13 @@ def desseguir(clientes, quantidade, driver, rodd, i,dispositivo):
         print('erro ao clicar em perfil')
 
     try:
-        driver.implicitly_wait(2)
+        sleep(2)
         driver.find_element(By.CSS_SELECTOR,'[content-desc="Perfil"]').click()
-        driver.implicitly_wait(2)
+        sleep(2)
         driver.find_element(By.CSS_SELECTOR,'[text="Seguindo"]').click()
-        driver.implicitly_wait(2)
+        sleep(2)
         driver.find_element(By.CSS_SELECTOR,'[text^="Classificado"]').click()
-        driver.implicitly_wait(2)
+        sleep(2)
         driver.find_element(By.CSS_SELECTOR,'[text="Data em que começou a seguir: mais antigas"]').click()
         sleep(randint(3, 5))
     except:

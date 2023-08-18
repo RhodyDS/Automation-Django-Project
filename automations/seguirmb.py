@@ -1,4 +1,3 @@
-from time import sleep
 from selenium.webdriver.common.by import By
 import datetime
 from rich import print
@@ -8,9 +7,14 @@ from appium.webdriver.common.appiumby import AppiumBy
 from appium.webdriver.common.mobileby import MobileBy
 from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.support import expected_conditions as EC
+from asgiref.sync import async_to_sync
+from channels.layers import get_channel_layer
+
+channel_layer = get_channel_layer()
 
 
 def seguir(clientes, quantidade, pack, driver, rodd, z, dispositivo):
+    driver.implicitly_wait(4)
     client = MongoClient()
     db = client["Rengage"]
     dbcliente = db["clientes"]
@@ -33,9 +37,22 @@ def seguir(clientes, quantidade, pack, driver, rodd, z, dispositivo):
     try:
         quanti = len(dbcliente.find_one({"user": x})["seguiu"])
         print(f"o usuario {x} já seguiu um total de {quanti} pessoas!!")
-
+        async_to_sync(channel_layer.group_send)(
+            "notifications",
+            {
+                "type": "send_notification",
+                "message": f"o usuario {x} já seguiu um total de {quanti} pessoas!!",
+            },
+        )
     except:
         print(f"o usuario {x} ainda não seguiu ninguem.")
+        async_to_sync(channel_layer.group_send)(
+            "notifications",
+            {
+                "type": "send_notification",
+                "message": f"o usuario {x} ainda não seguiu ninguem.",
+            },
+        )
         dbcliente.update_one({"user": x}, {"$set": {"seguiu": []}})
 
     ##################################seguirconta#################################################
@@ -55,6 +72,14 @@ def seguir(clientes, quantidade, pack, driver, rodd, z, dispositivo):
                 not in dbcliente.find_one({"user": x})["seguiu"]
             ):
                 print(f"[on blue] usuario {cont + 1} de {quantipack} da lista[/]")
+                async_to_sync(channel_layer.group_send)(
+                    "notifications",
+                    {
+                        "type": "send_notification",
+                        "message": f"usuario {cont + 1} de {quantipack} da lista",
+                    },
+                )
+
                 usuario = dbxerox.find_one({"user": w})["seguidores"][cont]
                 try:
                     driver.find_element(
@@ -65,9 +90,9 @@ def seguir(clientes, quantidade, pack, driver, rodd, z, dispositivo):
                         "com.instagram.android:id/action_bar_search_hints_text_layout",
                     ).click()
 
-                    driver.find_element(
-                        "id", "com.instagram.android:id/action_bar_search_edit_text"
-                    ).clear()
+                    # driver.find_element(
+                    #     "id", "com.instagram.android:id/action_bar_search_edit_text"
+                    # ).clear()
 
                     driver.find_element(
                         "id", "com.instagram.android:id/action_bar_search_edit_text"
@@ -75,6 +100,13 @@ def seguir(clientes, quantidade, pack, driver, rodd, z, dispositivo):
 
                 except:
                     print("erro ao tentar pesquisar")
+                    async_to_sync(channel_layer.group_send)(
+                        "notifications",
+                        {
+                            "type": "send_notification",
+                            "message": "erro ao tentar pesquisar",
+                        },
+                    )
                     try:
                         driver.find_element(
                             By.XPATH,
@@ -99,11 +131,10 @@ def seguir(clientes, quantidade, pack, driver, rodd, z, dispositivo):
                         continue
 
                 try:
-                    perf = wait.until(
-                        EC.element_to_be_clickable(
-                            ("id", "com.instagram.android:id/row_search_user_username")
-                        )
+                    perf = driver.find_element(
+                        "id", "com.instagram.android:id/row_search_user_username"
                     )
+
                     if usuario == perf.text:
                         perf.click()
                     else:
@@ -112,36 +143,67 @@ def seguir(clientes, quantidade, pack, driver, rodd, z, dispositivo):
                         )
                         errolist.append(usuario)
                         print(f"[on red]usuarios que com erro ao achar {errolist}[/]")
+                        async_to_sync(channel_layer.group_send)(
+                            "notifications",
+                            {
+                                "type": "send_notification",
+                                "message": f"usuario {usuario} não encontrado. pulando para o proximo, usuarios que com erro ao achar {errolist}",
+                            },
+                        )
                         cont += 1
                         continue
                 except:
                     print("sem usuario para essa busca....proximo..")
+                    async_to_sync(channel_layer.group_send)(
+                        "notifications",
+                        {
+                            "type": "send_notification",
+                            "message": "sem usuario para essa busca....proximo..",
+                        },
+                    )
                     errolist.append(usuario)
                     print(f"[on red]usuarios que com erro ao achar {errolist}[/]")
+                    async_to_sync(channel_layer.group_send)(
+                        "notifications",
+                        {
+                            "type": "send_notification",
+                            "message": f"usuarios que com erro ao achar {errolist}",
+                        },
+                    )
                     cont += 1
                     continue
 
                 ################ etapa do botao de seguir ######################################
                 try:
-                    btseguir = wait.until(
-                        EC.element_to_be_clickable(
-                            (
-                                By.ID,
-                                "com.instagram.android:id/profile_header_user_action_follow_button",
-                            )
-                        )
+                    btseguir = driver.find_element(
+                        "id",
+                        "com.instagram.android:id/profile_header_user_action_follow_button",
                     )
                     print(f"status: {btseguir.text}")
                     if btseguir.text == "Seguir":
                         btseguir.click()
-                        print("clicado em seguir")
-                        print("seguido com sucesso")
-                        # sleep(1)
+                        print("clicado em seguir,seguido com sucesso")
+                        
+                        async_to_sync(channel_layer.group_send)(
+                            "notifications",
+                            {
+                                "type": "send_notification",
+                                "message": f"status: {btseguir.text},clicado em seguir, seguido com sucesso ",
+                            },
+                        )
+
                         btseguir = driver.find_element(
                             By.ID,
                             "com.instagram.android:id/profile_header_user_action_follow_button",
                         )
                         print(f"resultado:{btseguir.text}")
+                        async_to_sync(channel_layer.group_send)(
+                            "notifications",
+                            {
+                                "type": "send_notification",
+                                "message": f"resultado:{btseguir.text}",
+                            },
+                        )
                         if btseguir.text == "Seguindo":
                             seguiu += 1
                             dbwork_diario.update_one(
@@ -163,6 +225,15 @@ def seguir(clientes, quantidade, pack, driver, rodd, z, dispositivo):
                                     clientes
                                 ]
                             )
+                            async_to_sync(channel_layer.group_send)(
+                                "notifications",
+                                {
+                                    "type": "send_notification",
+                                    "message": dbwork_diario.find_one(
+                                        {"data": str(data)}
+                                    )["clientes"][clientes],
+                                },
+                            )
 
                             ######### ^^^^^^^ armazena a conta seguida na lista de já seguidos ^^^^^^ ######
 
@@ -175,45 +246,22 @@ def seguir(clientes, quantidade, pack, driver, rodd, z, dispositivo):
                                 quant = len(fotos)
                                 try:
                                     for i in range(0, quant):
-                                        fotos = driver.find_elements(
-                                            By.CSS_SELECTOR,
-                                            '[content-desc *= "linha 1"]',
+                                        print(f"foto numero {i + 1}")                                        
+                                        fotos[i].click()
+                                        like = driver.find_elements(
+                                            AppiumBy.ID,
+                                            "com.instagram.android:id/row_feed_button_like",
                                         )
-                                        print(f"foto numero {i + 1}")
-                                        try:
-                                            fotos[i].click()
-                                            # while True:
-                                            # sleep(0.5)
-                                            # try:
-                                            #     if driver.find_element(By.CSS_SELECTOR,'[content-desc*="Vídeo do Reels"]'):
-                                            #         ActionChains(driver) \
-                                            #             .key_down(Keys.DOWN) \
-                                            #             .key_down(Keys.DOWN) \
-                                            #             .key_down(Keys.DOWN) \
-                                            #             .perform()
-                                            # finally:
-                                            like = driver.find_elements(
-                                                AppiumBy.ID,
-                                                "com.instagram.android:id/row_feed_button_like",
-                                            )
-                                            for k in like:
-                                                if len(like) == 1:
+                                        for k in like:
+                                            if len(like) == 1:
+                                                k.click()
+                                            else:
+                                                if like.index(k) == 1:
                                                     k.click()
-
-                                                else:
-                                                    if like.index(k) == 1:
-                                                        k.click()
-
-                                            print("ganhou like hehe")
-                                            driver.back()
-                                        except:
-                                            print(
-                                                f"não encontramos a foto {fotos[i] + 1}"
-                                            )
-
+                                        print("ganhou like hehe")
+                                        driver.back()
                                 except:
                                     print("ocorreu algum erro")
-                                    sleep(0.5)
                                     try:
                                         erro = driver.find_element(
                                             By.CSS_SELECTOR,
@@ -237,10 +285,24 @@ def seguir(clientes, quantidade, pack, driver, rodd, z, dispositivo):
 
                             except:
                                 print("usuario n possui fotos")
+                                async_to_sync(channel_layer.group_send)(
+                                    "notifications",
+                                    {
+                                        "type": "send_notification",
+                                        "message": f"usuario n possui fotos",
+                                    },
+                                )
 
                         ################################### etapa de sair###############################
                         print(
                             f'[on green ]rodada {rodd}° {z}°cliente:{clientes}[/]\n[on purple]:white_check_mark: {seguiu} pessoas seguidas!!TOTAL:{dbwork_diario.find_one({"data": str(data)})["clientes"][x]["fol"]}[/]'
+                        )
+                        async_to_sync(channel_layer.group_send)(
+                            "notifications",
+                            {
+                                "type": "send_notification",
+                                "message": f'rodada {rodd}° {z}°cliente:{clientes}\n {seguiu} pessoas seguidas!!TOTAL:{dbwork_diario.find_one({"data": str(data)})["clientes"][x]["fol"]}',
+                            },
                         )
                         dbcliente.update_one(
                             {"user": x}, {"$push": {"seguiu": usuario}}
@@ -250,13 +312,26 @@ def seguir(clientes, quantidade, pack, driver, rodd, z, dispositivo):
                             {"user": x}, {"$push": {"seguiu": usuario}}
                         )
                         print("conta já foi seguida anteriormente.")
+                        async_to_sync(channel_layer.group_send)(
+                            "notifications",
+                            {
+                                "type": "send_notification",
+                                "message": "conta já foi seguida anteriormente.",
+                            },
+                        )
 
                     cont += 1
 
                 except:
                     print("ocorreu algum erro no processo de seguir")
+                    async_to_sync(channel_layer.group_send)(
+                        "notifications",
+                        {
+                            "type": "send_notification",
+                            "message": "ocorreu algum erro no processo de seguir",
+                        },
+                    )
                     try:
-                        sleep(0.5)
                         erro = driver.find_elements(
                             By.CSS_SELECTOR, '[text = "Try Again Later"]'
                         )
@@ -301,3 +376,7 @@ def seguir(clientes, quantidade, pack, driver, rodd, z, dispositivo):
             except:
                 print("erro ao remover usuario")
         print("contas removidas.")
+        async_to_sync(channel_layer.group_send)(
+            "notifications",
+            {"type": "send_notification", "message": "contas removidas."},
+        )

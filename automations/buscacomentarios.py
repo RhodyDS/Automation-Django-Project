@@ -159,7 +159,6 @@ def commentEngaging(driver, quantComment , cliente , pessoasalvas):
         "jeff_rodrigues.jr",
         "matheuscavalliini",
         "wellington_wallker",
-        "novazoficial",
         "wessthug",
         "byelsilveira",
         "dori.souz",
@@ -279,7 +278,7 @@ def commentEngaging(driver, quantComment , cliente , pessoasalvas):
                             if tente >= 20:
                                 driver.back()
                                 pesquisar(random.choice(perfis), driver)
-                                sleep(randint(3, 4))
+                                sleep(randint(2, 3))
                                 driver.find_element(
                                     By.CSS_SELECTOR,
                                     '[content-desc *= "linha 1, coluna"'
@@ -338,7 +337,7 @@ def commentEngaging(driver, quantComment , cliente , pessoasalvas):
                                     "id",
                                     "com.instagram.android:id/action_bar_search_edit_text",
                                 ).send_keys(perfil)
-                                driver.implicitly_wait(2)
+                                sleep(2)
                                 perf = driver.find_elements(
                                     By.CSS_SELECTOR, "[text= " + perfil + " ]"
                                 )[1]
@@ -365,7 +364,7 @@ def commentEngaging(driver, quantComment , cliente , pessoasalvas):
                     actions.perform()
                     n = 1
                     continue
-                sleep(randint(2, 4))
+                sleep(randint(1, 3))
                 try:
                     try:
                         driver.find_element(
@@ -376,7 +375,7 @@ def commentEngaging(driver, quantComment , cliente , pessoasalvas):
                         sleep(1)
                         continue
 
-                    sleep(randint(2, 4))
+                    sleep(randint(1, 3))
                     try:
                         driver.find_element(
                             By.CSS_SELECTOR, '[content-desc *= "Comentar"]'
@@ -446,8 +445,7 @@ def commentEngaging(driver, quantComment , cliente , pessoasalvas):
                     print("erro ao comentar na Post de usuario")
                 for s in range(3):
                     driver.back()
-                    print('saii')
-                    sleep(1)
+ 
         jafoi = 0
         tentativa = False
         driver.back()

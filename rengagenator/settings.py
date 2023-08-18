@@ -1,5 +1,5 @@
 import os
-
+from kombu import Exchange, Queue
 from pathlib import Path
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
@@ -33,7 +33,6 @@ INSTALLED_APPS = [
     "customers",
     "channels",
 ]
-
 
 
 MIDDLEWARE = [
@@ -71,7 +70,7 @@ TEMPLATES = [
 ]
 
 
-#WSGI_APPLICATION = "rengagenator.wsgi.application"
+# WSGI_APPLICATION = "rengagenator.wsgi.application"
 ASGI_APPLICATION = "rengagenator.asgi.application"
 CHANNEL_LAYERS = {
     "default": {
@@ -140,3 +139,12 @@ STATICFILES_DIRS = [
 # https://docs.djangoproject.com/en/4.2/ref/settings/#default-auto-field
 
 DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
+
+
+# Celery settings
+CELERY_BROKER_URL = "redis://127.0.0.1:6379/0"
+CELERY_RESULT_BACKEND = "redis://127.0.0.1:6379/0"
+CELERY_TASK_SERIALIZER = "json"
+CELERY_TIMEZONE = TIME_ZONE
+CELERY_CONCURRENCY = 1
+CELERY_MAX_THREADS = 1

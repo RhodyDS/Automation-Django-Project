@@ -1,0 +1,19 @@
+{
+    "version": "0.2.0",
+    "configurations": [
+        {
+            "name": "Debug Celery",
+            "type": "python",
+            "request": "launch",
+            "program": "../venv/Scripts/celery.exe",
+            "args": [
+                "-A",
+                "rengagenator",
+                "worker",
+                "--loglevel=info"
+            ],
+            "cwd": "${workspaceFolder}",
+            "console": "integratedTerminal"
+        }
+    ]
+}

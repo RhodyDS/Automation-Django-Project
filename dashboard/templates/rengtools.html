@@ -139,6 +139,8 @@
 {% comment %} ----- JavaScript----- {% endcomment %} {% load static %}
 <script>
   document.addEventListener("DOMContentLoaded", function () {
+    const selectedGroups = [];
+    const selectedPacotes = [];
     // buttons varriables
     const followButton = document.getElementById("followButton");
     const storiesButton = document.getElementById("storiesButton");
@@ -153,7 +155,35 @@
     const followModal = new bootstrap.Modal(
       document.getElementById("followModal")
     );
-
+    const groupCheckboxes = document.querySelectorAll('[name="group"]');
+    groupCheckboxes.forEach((checkbox) => {
+      checkbox.addEventListener("change", function () {
+        if (checkbox.checked) {
+          selectedGroups.push(checkbox.value);
+        } else {
+          const index = selectedGroups.indexOf(checkbox.value);
+          if (index !== -1) {
+            selectedGroups.splice(index, 1);
+          }
+        }
+      });
+    });
+  
+    // Event listener para adicionar/remover valores da lista de pacotes selecionados
+    const pacoteCheckboxes = document.querySelectorAll('[name="pacote"]');
+    pacoteCheckboxes.forEach((checkbox) => {
+      checkbox.addEventListener("change", function () {
+        if (checkbox.checked) {
+          selectedPacotes.push(checkbox.value);
+        } else {
+          const index = selectedPacotes.indexOf(checkbox.value);
+          if (index !== -1) {
+            selectedPacotes.splice(index, 1);
+          }
+        }
+      });
+    });
+  
     // defining the fields
     followButton.addEventListener("click", function () {
       pacoteLabel.style.display = "block";
@@ -198,8 +228,8 @@
 
       const data = {
         dispositivo,
-        group,
-        pacote,
+        group: selectedGroups,
+        pacote: selectedPacotes,
         rodadas,
         tempo,
         quantseguir,
